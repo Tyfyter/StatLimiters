@@ -1,0 +1,3 @@
+displayName = Stat Limiters
+author = Moonlight Glint
+version = 1.0.1

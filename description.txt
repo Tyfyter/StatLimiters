@@ -1,0 +1,2 @@
+Have you ever been building something, but been too fast or jumped too high to place a certain block easily?
+Then this mod is for you! You can now reduce your jump height and movement speed to let you move more precisely (you can also reduce your health and mana if you enable them in the config)

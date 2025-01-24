@@ -1,0 +1,33 @@
+StatLimiters: {
+	NotLimited: Not Reduced
+	HealthLimiter: Max Life: {0}
+	ManaLimiter: Max Mana: {0}
+	JumpLimiter: Jump Height: {0}
+	SpeedLimiter: Movement Speed: {0}
+}
+
+Configs: {
+	StatLimiterConfig: {
+		DisplayName: Stat Limiter Config
+
+		ShowHealthLimiter: {
+			Label: Show Health Limiter
+			Tooltip: ""
+		}
+
+		ShowManaLimiter: {
+			Label: Show Mana Limiter
+			Tooltip: ""
+		}
+
+		ShowJumpLimiter: {
+			Label: Show Jump Limiter
+			Tooltip: ""
+		}
+
+		ShowSpeedLimiter: {
+			Label: Show Speed Limiter
+			Tooltip: ""
+		}
+	}
+}
