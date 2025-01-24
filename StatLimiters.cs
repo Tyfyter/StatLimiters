@@ -127,6 +127,7 @@ namespace StatLimiters {
 		public override bool DrawHover(SpriteBatch spriteBatch, ref BuilderToggleDrawParams drawParams) {
 			drawParams.Frame.Y = 20;
 			drawParams.Frame.Height = 20;
+			drawParams.Position.Y += 1;
 			return true;
 		}
 		public override void OnRightClick() {
