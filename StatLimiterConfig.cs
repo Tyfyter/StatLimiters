@@ -16,5 +16,11 @@ namespace StatLimiters {
 		public bool ShowJumpLimiter = true;
 		[DefaultValue(true)]
 		public bool ShowSpeedLimiter = true;
+		[DefaultValue(true)]
+		public bool ShowVitalCrystalLimiter = true;
+		[DefaultValue(true)]
+		public bool ShowAegisFruitLimiter = true;
+		[DefaultValue(true)]
+		public bool ShowArcaneCrystalLimiter = true;
 	}
 }

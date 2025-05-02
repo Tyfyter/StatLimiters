@@ -1,5 +1,6 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using MonoMod.Cil;
 using rail;
 using ReLogic.Content;
 using System;
@@ -88,6 +89,34 @@ namespace StatLimiters {
 			Player.accRunSpeed *= factor;
 		}
 	}
+	public class ShimmerHealthLimiter : StatLimiterPlayer {
+		public override int Ticks => 0;
+		public override LocalizedText ToggleDisplayValue => base.ToggleDisplayValue.WithFormatArgs(ReductionToggle(currentLimit == 1));
+		public override bool Active() => Player.usedAegisCrystal && StatLimiterConfig.Instance.ShowVitalCrystalLimiter;
+		public override void UpdateBadLifeRegen() => Player.lifeRegenTime -= 0.2f * currentLimit * Player.usedAegisCrystal.ToInt();
+	}
+	public class ShimmerDefenseLimiter : StatLimiterPlayer {
+		public override int Ticks => 0;
+		public override LocalizedText ToggleDisplayValue => base.ToggleDisplayValue.WithFormatArgs(ReductionToggle(currentLimit == 1));
+		public override bool Active() => Player.usedAegisFruit && StatLimiterConfig.Instance.ShowAegisFruitLimiter;
+		public override void PostUpdateEquips() => Player.statDefense -= 4 * currentLimit * Player.usedAegisFruit.ToInt();
+	}
+	public class ShimmerManaLimiter : StatLimiterPlayer {
+		public override int Ticks => 0;
+		public override LocalizedText ToggleDisplayValue => base.ToggleDisplayValue.WithFormatArgs(ReductionToggle(currentLimit == 1));
+		public override bool Active() => Player.usedArcaneCrystal && StatLimiterConfig.Instance.ShowArcaneCrystalLimiter;
+		public override void OnLoad() {
+			IL_Player.UpdateManaRegen += IL_Player_UpdateManaRegen;
+		}
+
+		private void IL_Player_UpdateManaRegen(ILContext il) {
+			ILCursor c = new(il);
+			while (c.TryGotoNext(MoveType.After, i => i.MatchLdfld<Player>(nameof(Player.usedArcaneCrystal)))) {
+				c.EmitLdarg0();
+				c.EmitDelegate(static (bool active, Player player) => active && player.GetModPlayer<ShimmerManaLimiter>().currentLimit == 0);
+			}
+		}
+	}
 	public abstract class StatLimiterPlayer : ModPlayer {
 		public int currentLimit = 0;
 		public abstract int Ticks { get; }
@@ -95,7 +124,7 @@ namespace StatLimiters {
 		public virtual LocalizedText ToggleDisplayValue => Language.GetOrRegister(Mod.GetLocalizationKey($"StatLimiters.{Name}"));
 		public virtual Position OrderPosition => new Default();
 		public StatLimiterBuilderToggle BuilderToggle { get; private set; }
-		public override void Load() {
+		public sealed override void Load() {
 			Mod.AddContent(BuilderToggle = new StatLimiterBuilderToggle(this));
 			OnLoad();
 		}
@@ -103,19 +132,25 @@ namespace StatLimiters {
 		public override void SetStaticDefaults() {
 			_ = Language.GetOrRegister(Mod.GetLocalizationKey($"StatLimiters.{Name}"));
 		}
+		public static string ReductionToggle(bool reduced) => Language.GetOrRegister($"Mods.StatLimiters.StatLimiters.{(reduced ? "Disabled" : "NotLimited")}").Value;
 		public static string ReductionText(int reduction) => reduction == 0 ? Language.GetOrRegister($"Mods.StatLimiters.StatLimiters.NotLimited").Value : (-reduction).ToString();
 		public static string ReductionText(float reductionPercent) => reductionPercent == 0 ? Language.GetOrRegister($"Mods.StatLimiters.StatLimiters.NotLimited").Value : $"-{reductionPercent:P0}";
 	}
 	[Autoload(false)]
-	public class StatLimiterBuilderToggle(StatLimiterPlayer player) : BuilderToggle {
-		public StatLimiterPlayer LocalPlayer => Main.LocalPlayer.GetModPlayer(player);
-		public override Position OrderPosition => player.OrderPosition;
+	public class StatLimiterBuilderToggle(StatLimiterPlayer basePlayer) : BuilderToggle {
+		public StatLimiterPlayer LocalPlayer => Main.LocalPlayer.GetModPlayer(basePlayer);
+		public override Position OrderPosition => basePlayer.OrderPosition;
 		public override bool Active() => LocalPlayer.Active();
-		public override string Name => $"{base.Name}_{player.Name}";
+		public override string Name => $"{base.Name}_{basePlayer.Name}";
 		public override string DisplayValue() => LocalPlayer.ToggleDisplayValue.Value;
 		public override string HoverTexture => Texture;
 		public override bool OnLeftClick(ref SoundStyle? sound) {
-			StatLimiterSystem.InterfaceLayer.SetActive(player);
+			if (basePlayer.Ticks == 0) {
+				LocalPlayer.currentLimit ^= 1;
+				SoundEngine.PlaySound(sound.Value);
+				return false;
+			}
+			StatLimiterSystem.InterfaceLayer.SetActive(basePlayer);
 			return false;
 		}
 		public override bool Draw(SpriteBatch spriteBatch, ref BuilderToggleDrawParams drawParams) {

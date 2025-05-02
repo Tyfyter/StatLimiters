@@ -1,9 +1,13 @@
 StatLimiters: {
 	NotLimited: Not Reduced
+	Disabled: Disabled
 	HealthLimiter: Max Life: {0}
 	ManaLimiter: Max Mana: {0}
 	JumpLimiter: Jump Height: {0}
 	SpeedLimiter: Movement Speed: {0}
+	ShimmerDefenseLimiter: "{$ItemName.AegisFruit}: {0}"
+	ShimmerHealthLimiter: "{$ItemName.AegisCrystal}: {0}"
+	ShimmerManaLimiter: "{$ItemName.ArcaneCrystal}: {0}"
 }
 
 Configs: {
@@ -27,6 +31,21 @@ Configs: {
 
 		ShowSpeedLimiter: {
 			Label: Show Speed Limiter
+			Tooltip: ""
+		}
+
+		ShowVitalCrystalLimiter: {
+			Label: Show Vital Crystal Limiter
+			Tooltip: ""
+		}
+
+		ShowAegisFruitLimiter: {
+			Label: Show Aegis Fruit Limiter
+			Tooltip: ""
+		}
+
+		ShowArcaneCrystalLimiter: {
+			Label: Show Arcane Crystal Limiter
 			Tooltip: ""
 		}
 	}
