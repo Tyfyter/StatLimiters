@@ -145,7 +145,7 @@ namespace StatLimiters {
 		public override string DisplayValue() => LocalPlayer.ToggleDisplayValue.Value;
 		public override string HoverTexture => Texture;
 		public override bool OnLeftClick(ref SoundStyle? sound) {
-			if (basePlayer.Ticks == 0) {
+			if (LocalPlayer.Ticks == 0) {
 				LocalPlayer.currentLimit ^= 1;
 				SoundEngine.PlaySound(sound.Value);
 				return false;
