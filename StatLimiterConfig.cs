@@ -22,5 +22,11 @@ namespace StatLimiters {
 		public bool ShowAegisFruitLimiter = true;
 		[DefaultValue(true)]
 		public bool ShowArcaneCrystalLimiter = true;
+		[DefaultValue(true)]
+		public bool ShowPlacementSpeedLimiter = true;
+		[DefaultValue(true)]
+		public bool ShowMiningSpeedLimiter = true;
+		[DefaultValue(true)]
+		public bool ShowAttackSpeedLimiter = true;
 	}
 }

@@ -12,6 +12,7 @@ using Terraria;
 using Terraria.Audio;
 using Terraria.DataStructures;
 using Terraria.GameContent;
+using Terraria.ID;
 using Terraria.Localization;
 using Terraria.ModLoader;
 using Terraria.UI;
@@ -50,7 +51,7 @@ namespace StatLimiters {
 		public override int Ticks => MaxManaSources.Sum(s => s.GetCount(Player));
 		public override LocalizedText ToggleDisplayValue => base.ToggleDisplayValue.WithFormatArgs(ReductionText(GetReduction()));
 		public override bool Active() => StatLimiterConfig.Instance.ShowManaLimiter && MaxManaSources.Any(s => s.GetCount(Player) > 0);
-		public override Position OrderPosition => new After(ModContent.GetInstance<HealthLimiter>().BuilderToggle);
+		public override Position OrderPosition => new After(ModContent.GetInstance<ShimmerHealthLimiter>().BuilderToggle);
 		public int GetReduction() {
 			int reduction = 0;
 			int remainingLess = currentLimit;
@@ -72,6 +73,7 @@ namespace StatLimiters {
 		public int TotalAmount => Ticks + 3;
 		public override LocalizedText ToggleDisplayValue => base.ToggleDisplayValue.WithFormatArgs(ReductionText(currentLimit / (float)TotalAmount));
 		public override bool Active() => StatLimiterConfig.Instance.ShowJumpLimiter;
+		public override Position OrderPosition => new After(ModContent.GetInstance<SpeedLimiter>().BuilderToggle);
 		public override void PostUpdateRunSpeeds() {
 			float factor = MathF.Pow(currentLimit / (float)TotalAmount, 2);
 			Player.jumpHeight -= (int)(Player.jumpHeight * factor);
@@ -82,6 +84,7 @@ namespace StatLimiters {
 		public override int Ticks => 19;
 		public int TotalAmount => Ticks + 1;
 		public override LocalizedText ToggleDisplayValue => base.ToggleDisplayValue.WithFormatArgs(ReductionText(currentLimit / (float)TotalAmount));
+		public override Position OrderPosition => new After(ModContent.GetInstance<ShimmerManaLimiter>().BuilderToggle);
 		public override bool Active() => StatLimiterConfig.Instance.ShowSpeedLimiter;
 		public override void PostUpdateRunSpeeds() {
 			float factor = 1 - currentLimit / (float)TotalAmount;
@@ -93,23 +96,26 @@ namespace StatLimiters {
 		public override int Ticks => 0;
 		public override LocalizedText ToggleDisplayValue => base.ToggleDisplayValue.WithFormatArgs(ReductionToggle(currentLimit == 1));
 		public override bool Active() => Player.usedAegisCrystal && StatLimiterConfig.Instance.ShowVitalCrystalLimiter;
+		public override Position OrderPosition => new After(ModContent.GetInstance<HealthLimiter>().BuilderToggle);
 		public override void UpdateBadLifeRegen() => Player.lifeRegenTime -= 0.2f * currentLimit * Player.usedAegisCrystal.ToInt();
 	}
 	public class ShimmerDefenseLimiter : StatLimiterPlayer {
 		public override int Ticks => 0;
 		public override LocalizedText ToggleDisplayValue => base.ToggleDisplayValue.WithFormatArgs(ReductionToggle(currentLimit == 1));
 		public override bool Active() => Player.usedAegisFruit && StatLimiterConfig.Instance.ShowAegisFruitLimiter;
+		public override Position OrderPosition => new After(ModContent.GetInstance<ShimmerHealthLimiter>().BuilderToggle);
 		public override void PostUpdateEquips() => Player.statDefense -= 4 * currentLimit * Player.usedAegisFruit.ToInt();
 	}
 	public class ShimmerManaLimiter : StatLimiterPlayer {
 		public override int Ticks => 0;
 		public override LocalizedText ToggleDisplayValue => base.ToggleDisplayValue.WithFormatArgs(ReductionToggle(currentLimit == 1));
 		public override bool Active() => Player.usedArcaneCrystal && StatLimiterConfig.Instance.ShowArcaneCrystalLimiter;
+		public override Position OrderPosition => new After(ModContent.GetInstance<ManaLimiter>().BuilderToggle);
 		public override void OnLoad() {
 			IL_Player.UpdateManaRegen += IL_Player_UpdateManaRegen;
 		}
 
-		private void IL_Player_UpdateManaRegen(ILContext il) {
+		static void IL_Player_UpdateManaRegen(ILContext il) {
 			ILCursor c = new(il);
 			while (c.TryGotoNext(MoveType.After, i => i.MatchLdfld<Player>(nameof(Player.usedArcaneCrystal)))) {
 				c.EmitLdarg0();
@@ -117,13 +123,56 @@ namespace StatLimiters {
 			}
 		}
 	}
+	public class PlacementSpeedLimiter : StatLimiterPlayer {
+		public override int Ticks => 10;
+		public override LocalizedText ToggleDisplayValue => base.ToggleDisplayValue.WithFormatArgs($"{ReductionText(currentLimit / (float)Ticks)} ({(100 / Result) - 100:+0.#;-0.#}%)");
+		public override bool Active() => (Player.tileSpeed < 1 || currentLimit != 0) && StatLimiterConfig.Instance.ShowPlacementSpeedLimiter;
+		public override Position OrderPosition => new After(ModContent.GetInstance<ShimmerManaLimiter>().BuilderToggle);
+		public override bool PreItemCheck() {
+			Player.tileSpeed = Result;
+			return true;
+		}
+		public float Result => Math.Max(float.Lerp(Player.tileSpeed, 1, currentLimit / (float)Ticks), Player.tileSpeed);
+	}
+	public class MiningSpeedLimiter : StatLimiterPlayer {
+		public override int Ticks => 10;
+		public override LocalizedText ToggleDisplayValue => base.ToggleDisplayValue.WithFormatArgs($"{ReductionText(currentLimit / (float)Ticks)} ({(100 / Result) - 100:+0.#;-0.#}%)");
+		public override bool Active() => (Player.pickSpeed < 1 || currentLimit != 0) && StatLimiterConfig.Instance.ShowMiningSpeedLimiter;
+		public override Position OrderPosition => new After(ModContent.GetInstance<PlacementSpeedLimiter>().BuilderToggle);
+		public override bool PreItemCheck() {
+			Player.pickSpeed = Result;
+			return true;
+		}
+		public float Result => Math.Max(float.Lerp(Player.pickSpeed, 1, currentLimit / (float)Ticks), Player.pickSpeed);
+	}
+	public class AttackSpeedLimiter : StatLimiterPlayer {
+		const int ticks = 10;
+		public override int Ticks => ticks;
+		public override LocalizedText ToggleDisplayValue => base.ToggleDisplayValue.WithFormatArgs($"{ReductionText(currentLimit / (float)Ticks)}{(
+			IsWeapon(Player.HeldItem) ? 
+			$" ({Player.GetWeaponAttackSpeed(Player.HeldItem) * 100 - 100:+0.#;-0.#}%)" : ""
+		)}");
+		public override bool Active() => StatLimiterConfig.Instance.ShowAttackSpeedLimiter;
+		public override Position OrderPosition => new After(ModContent.GetInstance<MiningSpeedLimiter>().BuilderToggle);
+		public override void OnLoad() {
+			On_Player.GetWeaponAttackSpeed += On_Player_GetWeaponAttackSpeed;
+		}
+		static float On_Player_GetWeaponAttackSpeed(On_Player.orig_GetWeaponAttackSpeed orig, Player self, Item sItem) {
+			float speed = orig(self, sItem);
+			if (IsWeapon(sItem)) speed = Math.Min(float.Lerp(speed, 1, self.GetModPlayer<AttackSpeedLimiter>().currentLimit / (float)ticks), speed);
+			return speed;
+		}
+		public static bool IsWeapon(Item item) => item.damage > 0 && item.useStyle != ItemUseStyleID.None && item.pick + item.axe + item.hammer <= 0;
+	}
 	public abstract class StatLimiterPlayer : ModPlayer {
 		public int currentLimit = 0;
 		public abstract int Ticks { get; }
 		public abstract bool Active();
 		public virtual LocalizedText ToggleDisplayValue => Language.GetOrRegister(Mod.GetLocalizationKey($"StatLimiters.{Name}"));
 		public virtual Position OrderPosition => new Default();
+		[field: CloneByReference]
 		public StatLimiterBuilderToggle BuilderToggle { get; private set; }
+		protected override bool CloneNewInstances => true;
 		public sealed override void Load() {
 			Mod.AddContent(BuilderToggle = new StatLimiterBuilderToggle(this));
 			OnLoad();

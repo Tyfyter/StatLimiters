@@ -8,6 +8,9 @@ StatLimiters: {
 	ShimmerDefenseLimiter: "{$ItemName.AegisFruit}: {0}"
 	ShimmerHealthLimiter: "{$ItemName.AegisCrystal}: {0}"
 	ShimmerManaLimiter: "{$ItemName.ArcaneCrystal}: {0}"
+	MiningSpeedLimiter: Mining Speed: {0}
+	AttackSpeedLimiter: Attack Speed: {0}
+	PlacementSpeedLimiter: Placement Speed: {0}
 }
 
 Configs: {
@@ -46,6 +49,21 @@ Configs: {
 
 		ShowArcaneCrystalLimiter: {
 			Label: Show Arcane Crystal Limiter
+			Tooltip: ""
+		}
+
+		ShowMiningSpeedLimiter: {
+			Label: Show Mining Speed Limiter
+			Tooltip: ""
+		}
+
+		ShowAttackSpeedLimiter: {
+			Label: Show Attack Speed Limiter
+			Tooltip: ""
+		}
+
+		ShowPlacementSpeedLimiter: {
+			Label: Show Placement Speed Limiter
 			Tooltip: ""
 		}
 	}
